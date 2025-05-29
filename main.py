@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 
 app=FastAPI()
 
@@ -20,7 +20,7 @@ from typing import List, Optional #for type hints
 class Task(BaseModel):
     id: int
     title: str
-    is_done: bool=False
+    done: bool=False
 #so Task MUST have these 3 attributes and is_done is False by default
 
 tasks: List[Task]=[]    #tasks is a list that must be made up of class Task i.e. all contain id, title, is_done status
@@ -31,13 +31,25 @@ def create_task(task:Task):
     return task
 
 @app.get("/tasks")
-def get_tasks(done: Optional[bool]=None):   #allows you to filter the done attribute in SwaggerUI. Nice
-    if done is None:    #None in this function basically acts as a default value and it IS special.
+def get_tasks(done: Optional[bool]=None):   #Used to filter the done attribute in SwaggerUI. Nice
+    if done is None:    #None in this function basically acts as a default value and it IS a special value.
         return tasks    #The reason we put Optional is because None isn't actually a bool value, but rather a special value.
     filtered_tasks=[]   #List comprehension (can also use return [task for task in tasks if tasks.done==done] i don't understand ew)
     for task in tasks:
-        if task.is_done==done:
+        if task.done==done:
             filtered_tasks.append(task)
             return filtered_tasks
+            
 
-        
+@app.get("/tasks/{task_id}")    #Filtering by task id.
+def get_tasks(task_id: int):
+    if tasks==[]:
+        raise HTTPException(status_code=404, detail="There are no tasks")
+    for task in tasks:
+        if task.id==task_id:
+            return task
+    raise HTTPException(status_code=404, detail="Task not found")   #FastAPI does NOT catch logical errors in your own garbage code, only JSON errors
+        #We DETECT where to spot for an HTTPException error, we stop execution, raise a proper HTTP error code, and send a JSON error response.
+        #try/catch isn't really necessary here for exception handling since FastAPI does that FOR YOU already and displays it w/ JSON error codes.                                                    
+        #Also we don't use else since that's only for successful stuff. Not errors lol.
+
