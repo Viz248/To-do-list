@@ -15,7 +15,7 @@ def greet(name: str):   #like any string
 #Okay, this section's done
 
 from pydantic import BaseModel #for data validation
-from typing import List #for type hints
+from typing import List, Optional #for type hints
 
 class Task(BaseModel):
     id: int
@@ -23,7 +23,7 @@ class Task(BaseModel):
     is_done: bool=False
 #so Task MUST have these 3 attributes and is_done is False by default
 
-tasks: List[Task]=[]  #tasks is a list that must be made up of class Task i.e. all contain id, title, is_done status
+tasks: List[Task]=[]    #tasks is a list that must be made up of class Task i.e. all contain id, title, is_done status
 
 @app.post("/tasks")
 def create_task(task:Task):
@@ -31,5 +31,13 @@ def create_task(task:Task):
     return task
 
 @app.get("/tasks")
-def get_tasks():
-    return tasks
+def get_tasks(done: Optional[bool]=None):   #allows you to filter the done attribute in SwaggerUI. Nice
+    if done is None:    #None in this function basically acts as a default value and it IS special.
+        return tasks    #The reason we put Optional is because None isn't actually a bool value, but rather a special value.
+    filtered_tasks=[]   #List comprehension (can also use return [task for task in tasks if tasks.done==done] i don't understand ew)
+    for task in tasks:
+        if task.is_done==done:
+            filtered_tasks.append(task)
+            return filtered_tasks
+
+        
