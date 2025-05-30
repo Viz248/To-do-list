@@ -1,4 +1,7 @@
 from fastapi import FastAPI, HTTPException
+from models import Task, TaskCreate #importing from models and database is just to avoid clutter in 1 single file, you could remove these 2 and
+from database import tasks, nextid  #put everything right here to understand it better, but it would look kinda messy
+from typing import List, Optional   #for type hints
 
 app=FastAPI()
 
@@ -14,20 +17,6 @@ def greet(name: str):   #like any string
 
 #Okay, this section's done
 
-from pydantic import BaseModel #for data validation
-from typing import List, Optional #for type hints
-
-class Task(BaseModel):
-    id: int
-    title: str
-    done: bool=False
-#so Task MUST have these 3 attributes and is_done is False by default
-
-class TaskCreate(BaseModel):    #This is the Task the client makes, they only need to enter the string
-    title: str
-
-tasks: List[Task]=[]    #tasks is a list that must be made up of class Task i.e. all contain id, title, is_done status
-nextid=1
 
 @app.post("/tasks") #CREATE
 def create_task(task:TaskCreate):
@@ -37,7 +26,7 @@ def create_task(task:TaskCreate):
     nextid+=1
     return newtask
 
-@app.get("/tasks")  #READ
+@app.get("/tasks", response_model=List[Task])  #READ    [COME BACK TO THIS] response_model is a good practice since there might be some other stuff that the dev has to see that clients don't need to. It doesn't do anything rn but come back to it 
 def get_tasks(done: Optional[bool]=None):   #Used to filter the done attribute in SwaggerUI. Nice
     if tasks==[]:
         raise HTTPException(status_code=404, detail="There are no tasks")
