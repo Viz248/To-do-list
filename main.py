@@ -23,22 +23,31 @@ class Task(BaseModel):
     done: bool=False
 #so Task MUST have these 3 attributes and is_done is False by default
 
+class TaskCreate(BaseModel):    #This is the Task the client makes, they only need to enter the string
+    title: str
+
 tasks: List[Task]=[]    #tasks is a list that must be made up of class Task i.e. all contain id, title, is_done status
+nextid=1
 
 @app.post("/tasks") #CREATE
-def create_task(task:Task):
-    tasks.append(task)
-    return task
+def create_task(task:TaskCreate):
+    global nextid
+    newtask=Task(id=nextid,title=task.title,done=False)
+    tasks.append(newtask)
+    nextid+=1
+    return newtask
 
 @app.get("/tasks")  #READ
 def get_tasks(done: Optional[bool]=None):   #Used to filter the done attribute in SwaggerUI. Nice
+    if tasks==[]:
+        raise HTTPException(status_code=404, detail="There are no tasks")
     if done is None:    #If there is NO filter given (True/False), then it is considered None and everything is shown
         return tasks    #The reason we put Optional is because None isn't actually a bool value, but rather a special value 
     filtered_tasks=[]   #List comprehension (can also use return [task for task in tasks if tasks.done==done] i don't understand ew)
     for task in tasks:
         if task.done==done:
             filtered_tasks.append(task)
-            return filtered_tasks
+    return filtered_tasks
             
 
 @app.get("/tasks/{task_id}")    #Filtering by task id.
