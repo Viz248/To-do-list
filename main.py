@@ -92,3 +92,13 @@ def delete_task(task_id: int):
         if task.id==task_id:
             return tasks.pop(i)
     raise HTTPException(status_code=404, detail="Task not found")   
+
+@app.get("/search", response_model=List[Task])  #Searching for task 
+def search_tasks(keyword: str):   
+    if tasks==[]:
+        raise HTTPException(status_code=404, detail="There are no tasks")
+    filtered_tasks=[task for task in tasks if keyword.lower() in task.title.lower()]
+    if filtered_tasks!=[]:
+        return filtered_tasks
+    raise HTTPException(status_code=404, detail="Task not found")
+    
