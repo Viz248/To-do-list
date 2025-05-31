@@ -71,7 +71,7 @@ def edit_task(task_id: int, updated_task: str):
             return task
     raise HTTPException(status_code=404, detail="Task not found")
 
-@app.put("/tasks/{task_id}", response_model=Task)    #PARTIAL UPDATE Editing task and/or status
+@app.patch("/tasks/{task_id}", response_model=Task)    #PARTIAL UPDATE Editing task and/or status
 def partially_edit_task(task_id: int, updated_task:UpdateTask):
     if tasks==[]:
         raise HTTPException(status_code=404, detail="There are no tasks")
