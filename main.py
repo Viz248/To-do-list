@@ -51,13 +51,23 @@ def get_tasks(task_id: int):
         #try/catch isn't really necessary here for exception handling since FastAPI does that FOR YOU already and displays it w/ JSON error codes.                                                    
         #Also we don't use else since that's only for successful stuff. Not errors lol.
 
-@app.put("/tasks/{task_id}")    #UPDATE
+@app.put("/tasks/{task_id}/done", response_model=Task)    #UPDATE Marking task as done
 def mark_done(task_id: int):
     if tasks==[]:
         raise HTTPException(status_code=404, detail="There are no tasks")
     for task in tasks:
         if task.id==task_id:
             task.done=True
+            return task
+    raise HTTPException(status_code=404, detail="Task not found")
+
+@app.put("/tasks/{task_id}/title", response_model=Task)    #UPDATE Editing task
+def edit_task(task_id: int, updated_task: str):
+    if tasks==[]:
+        raise HTTPException(status_code=404, detail="There are no tasks")
+    for task in tasks:
+        if task.id==task_id:
+            task.title=updated_task
             return task
     raise HTTPException(status_code=404, detail="Task not found")
 
