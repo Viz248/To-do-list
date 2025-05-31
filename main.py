@@ -77,8 +77,10 @@ def partially_edit_task(task_id: int, updated_task:UpdateTask):
         raise HTTPException(status_code=404, detail="There are no tasks")
     for task in tasks:
         if task.id==task_id:
-            task.title=updated_task.title
-            task.done=updated_task.done
+            if updated_task.title is not None:
+                task.title=updated_task.title
+            if updated_task.done is not None:
+                task.done=updated_task.done
             return task
     raise HTTPException(status_code=404, detail="Task not found")
 
