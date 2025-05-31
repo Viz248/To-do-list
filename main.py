@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException
-from models import Task, TaskCreate #importing from models and database is just to avoid clutter in 1 single file, you could remove these 2 and
+from models import Task, TaskCreate, UpdateTask #importing from models and database is just to avoid clutter in 1 single file, you could remove these 2 and
 from database import tasks, nextid  #put everything right here to understand it better, but it would look kinda messy
 from typing import List, Optional   #for type hints
 
@@ -68,6 +68,17 @@ def edit_task(task_id: int, updated_task: str):
     for task in tasks:
         if task.id==task_id:
             task.title=updated_task
+            return task
+    raise HTTPException(status_code=404, detail="Task not found")
+
+@app.put("/tasks/{task_id}", response_model=Task)    #PARTIAL UPDATE Editing task and/or status
+def partially_edit_task(task_id: int, updated_task:UpdateTask):
+    if tasks==[]:
+        raise HTTPException(status_code=404, detail="There are no tasks")
+    for task in tasks:
+        if task.id==task_id:
+            task.title=updated_task.title
+            task.done=updated_task.done
             return task
     raise HTTPException(status_code=404, detail="Task not found")
 
