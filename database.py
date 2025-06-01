@@ -1,5 +1,10 @@
-from typing import List #for type hints
-from models import Task
+from sqlmodel import create_engine, SQLModel, Session
 
-tasks: List[Task]=[]    #tasks is a list that must be made up of class Task i.e. all contain id, title, is_done status
-nextid=1
+DATABASE_URL="sqlite:///./tasks.db" #Creates a tasks.db file using sqlite
+engine=create_engine(DATABASE_URL, echo=True)   #echo here prints all SQL statements
+
+def init_db():
+    SQLModel.metadata.create_all(engine)
+
+def get_session():
+    return Session(engine)
