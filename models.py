@@ -1,8 +1,8 @@
-from pydantic import BaseModel #for data validation
+from sqlmodel import SQLModel, Field #for data validation
 from typing import Optional
 
-class Task(BaseModel):
-    id: int
+class Task(SQLModel, table=True):
+    id: Optional[int]=Field(default=None, primary_key=True)
     title: str
     done: bool=False
 #so Task MUST have these 3 attributes and is_done is False by default
