@@ -3,6 +3,8 @@ from models import Task, TaskCreate, TaskRead, UpdateTask #importing from models
 from typing import List, Optional   #for type hints
 from sqlmodel import Session, select    #MAKE SURE YOU IMPORT SELECT FROM SQLMODEL AND [NOT] SQLALCHEMY
 from database import get_session
+from utils import get_all_tasks
+from sqlalchemy import func #to use SQL functions
 
 router=APIRouter()
 
@@ -18,7 +20,6 @@ def greet(name: str):   #like any string
 
 #Okay, this section's done
 
-
 @router.post("/tasks") #CREATE
 def create_task(task:TaskCreate, session: Session=Depends(get_session)):
     newtask=Task(title=task.title)
@@ -29,22 +30,22 @@ def create_task(task:TaskCreate, session: Session=Depends(get_session)):
 
 @router.get("/tasks", response_model=List[TaskRead])  #READ    response_model VALIDATES what the API returns to the user
 def get_tasks(done: Optional[bool]=None, session: Session=Depends(get_session)):   #Used to filter the done attribute in SwaggerUI. Nice
-    all_tasks=session.exec(select(Task)).all()
-    if not all_tasks:  #Checks if the table is empty
+    tasks=get_all_tasks(session)  #a python list of Task objects
+    if tasks==[]:  #Checks if the table is empty
         raise HTTPException(status_code=404, detail="There are no tasks")
     if done is None:    #If there is NO filter given (True/False), then it is considered None and everything is shown
-        return all_tasks    #The reason we put Optional is because None isn't actually a bool value, but rather a special value 
+        return tasks    #The reason we put Optional is because None isn't actually a bool value, but rather a special value 
     filtered_tasks=session.exec(select(Task).where(Task.done==done)).all()
     return filtered_tasks
             
-
 @router.get("/tasks/{task_id}")    #Filtering by task id.
-def get_tasks(task_id: int):
+def get_tasks(task_id: int, session: Session=Depends(get_session)):
+    tasks=get_all_tasks(session)
     if tasks==[]:
         raise HTTPException(status_code=404, detail="There are no tasks")
-    for task in tasks:
-        if task.id==task_id:
-            return task
+    filtered_tasks=session.exec(select(Task).where(Task.id==task_id)).all()
+    if filtered_tasks!=[]:
+        return filtered_tasks
     raise HTTPException(status_code=404, detail="Task not found")   #FastAPI does NOT catch logical errors in your own garbage code, only JSON errors
         #We DETECT where to spot for an HTTPException error, we stop execution, raise a proper HTTP error code, and send a JSON error response.
         #try/catch isn't really necessary here for exception handling since FastAPI does that FOR YOU already and displays it w/ JSON error codes.                                                    
@@ -92,11 +93,12 @@ def delete_task(task_id: int):
             return tasks.pop(i)
     raise HTTPException(status_code=404, detail="Task not found")   
 
-@router.get("/search", response_model=List[Task])  #Searching for task 
-def search_tasks(keyword: str):   
+@router.get("/search", response_model=List[TaskRead])  #Searching for task 
+def search_tasks(keyword: str, session: Session=Depends(get_session)):   
+    tasks=get_all_tasks(session)
     if tasks==[]:
         raise HTTPException(status_code=404, detail="There are no tasks")
-    filtered_tasks=[task for task in tasks if keyword.lower() in task.title.lower()]
+    filtered_tasks=session.exec(select(Task).where(func.lower(Task.title).contains(keyword.lower()))).all()
     if filtered_tasks!=[]:
         return filtered_tasks
     raise HTTPException(status_code=404, detail="Task not found")
