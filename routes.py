@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from models import Task, TaskCreate, TaskRead, UpdateTask #importing from models and database is just to avoid clutter in 1 single file, you could remove these 2 and
 from typing import List, Optional   #for type hints
-from sqlmodel import Session, select    #MAKE SURE YOU IMPORT SELECT FROM SQLMODEL AND [NOT] SQLALCHEMY
+from sqlmodel import Session, select, delete    #MAKE SURE YOU IMPORT SELECT FROM SQLMODEL AND [NOT] SQLALCHEMY
 from database import get_session
 from utils import get_all_tasks
 from sqlalchemy import func #to use SQL functions
@@ -85,13 +85,16 @@ def partially_edit_task(task_id: int, updated_task:UpdateTask):
     raise HTTPException(status_code=404, detail="Task not found")
 
 @router.delete("/tasks/{task_id}") #DELETE
-def delete_task(task_id: int):
+def delete_task(task_id: int, session: Session=Depends(get_session)):
+    tasks=get_all_tasks(session)
     if tasks==[]:
         raise HTTPException(status_code=404, detail="There are no tasks")
-    for i,task in enumerate(tasks): #Python equivalent to for(i=0,i<len(tasks),i++) lol
-        if task.id==task_id:
-            return tasks.pop(i)
-    raise HTTPException(status_code=404, detail="Task not found")   
+    task=session.exec(select(Task).where(Task.id==task_id)).first() #Without something like .first(), .all(), etc., it cannot be a usable Task instance
+    if not task:                                                    #and is known as a Result object which gives an immediate viewable result
+        raise HTTPException(status_code=404, detail="Task not found")   
+    session.delete(task)
+    session.commit()    #.refresh() isn't needed when deleting
+    return {"detail": f"Task {task_id} has been deleted."}
 
 @router.get("/search", response_model=List[TaskRead])  #Searching for task 
 def search_tasks(keyword: str, session: Session=Depends(get_session)):   
