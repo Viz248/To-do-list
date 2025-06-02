@@ -1,7 +1,8 @@
-from fastapi import APIRouter
-from models import Task, TaskCreate, UpdateTask #importing from models and database is just to avoid clutter in 1 single file, you could remove these 2 and
-from database import tasks, nextid  #put everything right here to understand it better, but it would look kinda messy
+from fastapi import APIRouter, Depends, HTTPException
+from models import Task, TaskCreate, TaskRead, UpdateTask #importing from models and database is just to avoid clutter in 1 single file, you could remove these 2 and
 from typing import List, Optional   #for type hints
+from sqlmodel import Session, select    #MAKE SURE YOU IMPORT SELECT FROM SQLMODEL AND [NOT] SQLALCHEMY
+from database import get_session
 
 router=APIRouter()
 
@@ -19,23 +20,21 @@ def greet(name: str):   #like any string
 
 
 @router.post("/tasks") #CREATE
-def create_task(task:TaskCreate):
-    global nextid
-    newtask=Task(id=nextid,title=task.title,done=False)
-    tasks.append(newtask)
-    nextid+=1
+def create_task(task:TaskCreate, session: Session=Depends(get_session)):
+    newtask=Task(title=task.title)
+    session.add(newtask)    #stages
+    session.commit()
+    session.refresh(newtask)    #updates python objects with database's new data
     return newtask
 
-@router.get("/tasks", response_model=List[Task])  #READ    [COME BACK TO THIS] response_model is a good practice since there might be some other stuff that the dev has to see that clients don't need to. It doesn't do anything rn but come back to it 
-def get_tasks(done: Optional[bool]=None):   #Used to filter the done attribute in SwaggerUI. Nice
-    if tasks==[]:
+@router.get("/tasks", response_model=List[TaskRead])  #READ    response_model VALIDATES what the API returns to the user
+def get_tasks(done: Optional[bool]=None, session: Session=Depends(get_session)):   #Used to filter the done attribute in SwaggerUI. Nice
+    all_tasks=session.exec(select(Task)).all()
+    if not all_tasks:  #Checks if the table is empty
         raise HTTPException(status_code=404, detail="There are no tasks")
     if done is None:    #If there is NO filter given (True/False), then it is considered None and everything is shown
-        return tasks    #The reason we put Optional is because None isn't actually a bool value, but rather a special value 
-    filtered_tasks=[]   #List comprehension (can also use return [task for task in tasks if tasks.done==done] i don't understand ew)
-    for task in tasks:
-        if task.done==done:
-            filtered_tasks.append(task)
+        return all_tasks    #The reason we put Optional is because None isn't actually a bool value, but rather a special value 
+    filtered_tasks=session.exec(select(Task).where(Task.done==done)).all()
     return filtered_tasks
             
 
