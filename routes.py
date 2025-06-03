@@ -52,37 +52,49 @@ def get_tasks(task_id: int, session: Session=Depends(get_session)):
         #Also we don't use else since that's only for successful stuff. Not errors lol.
 
 @router.put("/tasks/{task_id}/done", response_model=Task)    #UPDATE Marking task as done
-def mark_done(task_id: int):
+def mark_done(task_id: int, session: Session=Depends(get_session)):
+    tasks=get_all_tasks(session)
     if tasks==[]:
         raise HTTPException(status_code=404, detail="There are no tasks")
-    for task in tasks:
-        if task.id==task_id:
-            task.done=True
-            return task
-    raise HTTPException(status_code=404, detail="Task not found")
+    task=session.exec(select(Task).where(Task.id==task_id)).first() 
+    if not task:                                                    
+        raise HTTPException(status_code=404, detail="Task not found")   
+    task.done=True
+    session.add(task)
+    session.commit()
+    session.refresh(task)
+    return task    
 
 @router.put("/tasks/{task_id}/title", response_model=Task)    #UPDATE Editing task
-def edit_task(task_id: int, updated_task: str):
+def edit_task(task_id: int, updated_task: str, session: Session=Depends(get_session)):
+    tasks=get_all_tasks(session)
     if tasks==[]:
         raise HTTPException(status_code=404, detail="There are no tasks")
-    for task in tasks:
-        if task.id==task_id:
-            task.title=updated_task
-            return task
-    raise HTTPException(status_code=404, detail="Task not found")
+    task=session.exec(select(Task).where(Task.id==task_id)).first() 
+    if not task:                                                    
+        raise HTTPException(status_code=404, detail="Task not found")   
+    task.title=updated_task
+    session.add(task)
+    session.commit()
+    session.refresh(task)
+    return task 
 
 @router.patch("/tasks/{task_id}", response_model=Task)    #PARTIAL UPDATE Editing task and/or status
-def partially_edit_task(task_id: int, updated_task:UpdateTask):
+def partially_edit_task(task_id: int, updated_task:UpdateTask, session: Session=Depends(get_session)):
+    tasks=get_all_tasks(session)
     if tasks==[]:
         raise HTTPException(status_code=404, detail="There are no tasks")
-    for task in tasks:
-        if task.id==task_id:
-            if updated_task.title is not None:
-                task.title=updated_task.title
-            if updated_task.done is not None:
-                task.done=updated_task.done
-            return task
-    raise HTTPException(status_code=404, detail="Task not found")
+    task=session.exec(select(Task).where(Task.id==task_id)).first() 
+    if not task:                                                    
+        raise HTTPException(status_code=404, detail="Task not found")
+    if updated_task.title is not None:
+        task.title=updated_task.title
+    if updated_task.done is not None:
+        task.done=updated_task.done
+    session.add(task)
+    session.commit()
+    session.refresh(task)
+    return task
 
 @router.delete("/tasks/{task_id}") #DELETE
 def delete_task(task_id: int, session: Session=Depends(get_session)):
