@@ -12,11 +12,24 @@ class Task(TaskBase, table=True):
 class TaskCreate(TaskBase):
     pass
 
-class UpdateTask(SQLModel):
-    title: Optional[str]=None
-    done: Optional[bool]=None
-
 class TaskRead(SQLModel):   #We have a seperate reading class for GET since class Task has id as Optional so FastAPI might think that it might not 
     id: int                 #even exist at all which is NOT possible.
     title: str              #response_model=List[Task] is the one that is responsible for data validation and hence gives the error
     done: bool
+
+class UpdateTask(SQLModel):
+    title: Optional[str]=None
+    done: Optional[bool]=None
+
+class User(SQLModel, table=True):
+    id: Optional[int]=Field(default=None, primary_key=True)
+    username: str
+    hashed_password: str
+
+class UserCreate(SQLModel):
+    username: str
+    password: str
+
+class UserRead(SQLModel):
+    id: int
+    username: str
