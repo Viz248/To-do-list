@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
-from models import Task, TaskCreate, TaskRead, UpdateTask #importing from models and database is just to avoid clutter in 1 single file, you could remove these 2 and
+from models import Task, TaskCreate, TaskRead, UpdateTask, User, UserCreate, UserRead #importing from models just to avoid clutter in 1 single file
 from typing import List, Optional   #for type hints
 from sqlmodel import Session, select, delete    #MAKE SURE YOU IMPORT SELECT FROM SQLMODEL AND [NOT] SQLALCHEMY
 from database import get_session
-from utils import get_all_tasks
+from utils import get_all_tasks, hash_password
 from sqlalchemy import func #to use SQL functions
 
 router=APIRouter()
@@ -117,3 +117,14 @@ def search_tasks(keyword: str, session: Session=Depends(get_session)):
     if filtered_tasks!=[]:
         return filtered_tasks
     raise HTTPException(status_code=404, detail="Task not found")
+
+#For Users:
+
+@router.post("/register", response_model=UserRead)  #we are using response_model here because if you don't, it'll return newuser, which is a User
+def register(user:UserCreate, session: Session=Depends(get_session)):   #object, WITH the hashed_password which we DON'T want to show. We only want the 
+    hashed_pw=hash_password(user.password)                              #id & username, which is why we made the UserRead class in the first place
+    newuser=User(username=user.username, hashed_password=hashed_pw)         
+    session.add(newuser)  
+    session.commit()
+    session.refresh(newuser)
+    return newuser
