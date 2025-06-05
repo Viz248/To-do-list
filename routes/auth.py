@@ -22,4 +22,4 @@ def login(form_data: OAuth2PasswordRequestForm=Depends(), session: Session=Depen
     if not user or not verify_password(form_data.password,user.hashed_password):
         raise HTTPException(status_code=404, detail="Invalid credentials")
     token=create_access_token({"sub":user.username})
-    return {"access token":token, "token_type":"bearer"}
+    return {"access_token":token, "token_type":"bearer"}
