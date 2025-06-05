@@ -18,11 +18,11 @@ load_dotenv()   #looks for .env file
 
 SECRET_KEY=os.getenv("SECRET_KEY")
 ALGORITHM=os.getenv("ALGORITHM")
-ACCESS_TOKEN_EXPIRE_MINUTES=os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
+ACCESS_TOKEN_EXPIRE_MINUTES=int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))   #os.getenv always returns a string, so remember to convert it
 
 def create_access_token(data: dict):    #this data will be something like {"sub":"Jordan"}. Note that sub is a good naming convention to identify who the token is for
     to_encode=data.copy()   #keeps the original dictionary the same
-    expire=date.utcnow()+timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    expire=datetime.utcnow()+timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp":expire})   #adds a key-value pair for the expiry time to the dictionary
     encoded_jwt=jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
