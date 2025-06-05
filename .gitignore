@@ -1,0 +1,11 @@
+#Doesn't allow staging any of these files
+#To remove any accidental commits, use git rm--cached (filename) OR -r (foldername)
+
+
+__pycache__/
+
+env/
+
+.env
+
+*.db
