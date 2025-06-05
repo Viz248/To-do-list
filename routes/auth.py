@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from models import User, UserCreate, UserRead
-from sqlmodel import Session
+from sqlmodel import Session, select
 from database import get_session
-from utils import hash_password
+from security import hash_password, verify_password, create_access_token
+from fastapi.security import OAuth2PasswordRequestForm  #fetches user's username and password from login submission form
 
 auth_router=APIRouter()
 
@@ -14,3 +15,11 @@ def register(user:UserCreate, session: Session=Depends(get_session)):   #object,
     session.commit()
     session.refresh(newuser)
     return newuser
+
+@auth_router.post("/login")
+def login(form_data: OAuth2PasswordRequestForm=Depends(), session: Session=Depends(get_session)):
+    user=session.exec(select(User).where(User.username==form_data.username)).first()
+    if not user or not verify_password(form_data.password,user.hashed_password):
+        raise HTTPException(status_code=404, detail="Invalid credentials")
+    token=create_access_token({"sub":user.username})
+    return {"access token":token, "token_type":"bearer"}
